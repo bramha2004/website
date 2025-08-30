@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KAYGM Work Status</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    :root{
+      --glass-bg: rgba(255,255,255,0.06);
+    }
+    body { font-family: 'Poppins', sans-serif; background: #0f172a; color: #fff; }
+    .fade-in { animation: fadeIn 0.9s ease forwards; opacity:0; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    video.bg-video {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -20;
+      opacity: 0.14;
+    }
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(8px);
+    }
+    .whatsapp-btn {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 60;
+      width: 64px;
+      height: 64px;
+      border-radius: 999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background: linear-gradient(135deg,#25D366,#128C7E);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      font-size: 26px;
+      transition: transform .15s ease;
+    }
+    .whatsapp-btn:hover { transform: scale(1.08); }
+
+    /* portfolio card */
+    .port-card { transition: transform .18s ease, box-shadow .18s ease; }
+    .port-card:hover { transform: translateY(-6px); box-shadow: 0 12px 30px rgba(2,6,23,0.6); }
+
+    /* leaderboard highlight */
+    .leader-top { border-left: 4px solid #f97316; background: rgba(255,255,255,0.06); }
+
+    /* small utilities */
+    .muted { color: #94a3b8; }
+    pre#reportOutput { color: #e6edf3; white-space: pre-wrap; }
+    .btn-anim { transition: transform .14s ease, box-shadow .14s ease; }
+    .btn-anim:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(2,6,23,0.5); }
+
+    /* responsive tweaks */
+    @media (max-width:640px){
+      .whatsapp-btn{ width:56px;height:56px;font-size:22px;right:14px;bottom:14px; }
+    }
+  </style>
+</head>
+<body class="min-h-screen p-6">
+
+  <!-- Background video -->
+  <video autoplay muted loop class="bg-video">
+    <source src="https://cdn.coverr.co/videos/coverr-coding-on-a-laptop-7212/1080p.mp4" type="video/mp4" />
+  </video>
+
+  <header class="max-w-5xl mx-auto text-center mb-6 fade-in">
+    <h1 class="text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-pink-400 via-purple-500 to-indigo-400">
+      KAYGM & Associates
+    </h1>
+    <p class="mt-2 text-slate-200">Work Status Management System</p>
+  </header>
+
+  <main class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Partners -->
+    <section class="glass rounded-xl p-5 shadow-xl fade-in">
+      <h2 class="text-xl font-semibold mb-3 text-center">Our Partners</h2>
+      <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-center">
+        <li class="bg-slate-800/50 rounded-lg p-3">Animesh Yadav</li>
+        <li class="bg-slate-800/50 rounded-lg p-3">Ravi Kant Goel</li>
+        <li class="bg-slate-800/50 rounded-lg p-3">Sourav Modi</li>
+        <li class="bg-slate-800/50 rounded-lg p-3">Krishna Goel</li>
+      </ul>
+    </section>
+
+    <!-- Portfolio & Leaderboard Row -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Portfolio (AI Insight) -->
+      <div class="glass rounded-xl p-5 shadow-xl fade-in lg:col-span-2">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">📊 AI Portfolio — Availability & Speed</h3>
+          <div class="flex items-center gap-2">
+            <button onclick="computePortfolio()" class="px-3 py-1 rounded-md bg-gradient-to-r from-indigo-500 to-purple-600 btn-anim">Refresh</button>
+            <button id="exportCsv" class="px-3 py-1 rounded-md bg-slate-700/70 btn-anim">Export CSV</button>
+          </div>
+        </div>
+
+        <p class="muted mt-2 mb-4">Free = no pending WIP. Speed calculated from historical durations (avg completion time).</p>
+
+        <div id="portfolioGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"></div>
+      </div>
+
+      <!-- Leaderboard -->
+      <aside class="glass rounded-xl p-5 shadow-xl fade-in">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">🏆 Leaderboard</h3>
+          <button onclick="renderLeaderboard()" class="px-2 py-1 rounded-md bg-slate-700/60">Refresh</button>
+        </div>
+        <p class="muted mt-2 mb-3">Most uploads appear on top.</p>
+        <div id="leaderboardList" class="space-y-3 max-h-64 overflow-y-auto"></div>
+      </aside>
+    </section>
+
+    <!-- Form + Logs Row -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Input Form -->
+      <div class="glass rounded-xl p-6 shadow-xl fade-in">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm mb-1">Employee</label>
+            <select id="employee" class="w-full p-2 rounded text-slate-900">
+              <option value="">Select Employee</option>
+              <option>Bramhananda Das</option>
+              <option>Sanu Singh</option>
+              <option>Dipu Mahato</option>
+              <option>Debangi Dii</option>
+              <option>Antima Di</option>
+              <option>Mozzamil Salim</option>
+              <option>Nitaii</option>
+              <option>Pintu Vhiya</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Under Partner (optional)</label>
+            <select id="partner" class="w-full p-2 rounded text-slate-900">
+              <option value="">Select Partner</option>
+              <option>Animesh Yadav</option>
+              <option>Ravi Kant Goel</option>
+              <option>Sourav Modi</option>
+              <option>Krishna Goel</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Group</label>
+            <select id="group" class="w-full p-2 rounded text-slate-900">
+              <option value="">Select Group</option>
+              <option>GST</option>
+              <option>TDS</option>
+              <option>ROC</option>
+              <option>Audit</option>
+              <option>Accounting</option>
+              <option>Payroll</option>
+              <option>Advisory</option>
+              <option>Legal</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Project</label>
+            <input id="project" class="w-full p-2 rounded text-slate-900" placeholder="Project Name" />
+          </div>
+
+          <div>
+            <label class="block text-sm mb-1">Message</label>
+            <textarea id="message" class="w-full p-2 rounded text-slate-900" rows="3" placeholder="Message"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm mb-1">Work Status</label>
+              <select id="status" class="w-full p-2 rounded text-slate-900">
+                <option value="">Work Status</option>
+                <option>WIP</option>
+                <option>Complete</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Priority</label>
+              <select id="priority" class="w-full p-2 rounded text-slate-900">
+                <option value="">Priority</option>
+                <option>Low</option>
+                <option>Medium</option>
+                <option>High</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button onclick="addLog()" class="flex-1 rounded-xl py-2 bg-gradient-to-r from-blue-500 to-purple-600 btn-anim">🚀 Send Message & Update Status</button>
+            <button onclick="clearAll()" class="rounded-xl py-2 px-4 bg-slate-700/60">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div class="glass rounded-xl p-6 shadow-xl fade-in">
+        <div class="flex items-center gap-3 mb-4">
+          <input id="search" oninput="renderLogs()" placeholder="Search updates..." class="flex-1 p-2 rounded text-slate-900" />
+          <button onclick="renderLogs()" class="px-3 py-2 bg-slate-700/60 rounded">Search</button>
+        </div>
+        <div id="logContainer" class="space-y-3 max-h-[520px] overflow-y-auto"></div>
+      </div>
+    </section>
+
+    <!-- Footer small note -->
+    <footer class="text-center text-slate-400 text-sm mt-2 fade-in">
+      Made by Bramhananda Das — KAYGM & Associates
+    </footer>
+  </main>
+
+  <!-- WhatsApp Floating -->
+  <a class="whatsapp-btn" href="https://wa.me/916297494510" target="_blank" title="Chat on WhatsApp">💬</a>
+
+  <script>
+    // Data stored in localStorage: statusLog - array of items
+    // Item schema:
+    // { id: number, employee, partner (opt), group, project, message, status, priority, timestampISO, startTimeMs?, completedAtMs?, durationMs? }
+
+    let logs = JSON.parse(localStorage.getItem('statusLog') || '[]');
+
+    // Utils
+    const saveLogs = () => {
+      localStorage.setItem('statusLog', JSON.stringify(logs));
+    };
+
+    const nowMs = () => Date.now();
+
+    // Add log - if status WIP -> set startTimeMs, if Complete -> set startTime & completedAt (duration 0)
+    function addLog() {
+      const employee = document.getElementById('employee').value.trim();
+      const partner = document.getElementById('partner').value.trim();
+      const group = document.getElementById('group').value.trim();
+      const project = document.getElementById('project').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const status = document.getElementById('status').value;
+      const priority = document.getElementById('priority').value;
+
+      if (!employee || !group || !project || !message || !status || !priority) {
+        alert('Please fill all fields');
+        return;
+      }
+
+      const id = nowMs();
+      const item = {
+        id,
+        employee,
+        partner: partner || '',
+        group,
+        project,
+        message,
+        status,
+        priority,
+        timestampISO: new Date().toISOString()
+      };
+
+      if (status === 'WIP') {
+        item.startTimeMs = id;
+      } else if (status === 'Complete') {
+        // completed immediately
+        item.startTimeMs = id;
+        item.completedAtMs = id;
+        item.durationMs = 0;
+      }
+
+      logs.push(item);
+      saveLogs();
+      renderLogs();
+      computePortfolio();
+      renderLeaderboard();
+      // clear inputs (but keep partner maybe)
+      document.getElementById('employee').value = '';
+      document.getElementById('partner').value = '';
+      document.getElementById('group').value = '';
+      document.getElementById('project').value = '';
+      document.getElementById('message').value = '';
+      document.getElementById('status').value = '';
+      document.getElementById('priority').value = '';
+    }
+
+    // When marking complete: find entry by id, set completedAt and durationMs
+    function markComplete(id) {
+      const idx = logs.findIndex(l => l.id === id);
+      if (idx === -1) return;
+      const now = nowMs();
+      if (!logs[idx].startTimeMs) logs[idx].startTimeMs = logs[idx].id;
+      logs[idx].completedAtMs = now;
+      logs[idx].durationMs = Math.max(0, logs[idx].completedAtMs - logs[idx].startTimeMs);
+      logs[idx].status = 'Complete';
+      saveLogs();
+      renderLogs();
+      computePortfolio();
+      renderLeaderboard();
+    }
+
+    // render logs (reverse chronological)
+    function renderLogs() {
+      pruneOld(); // ensure 24h prune before rendering
+      const container = document.getElementById('logContainer');
+      const q = (document.getElementById('search').value || '').toLowerCase();
+      container.innerHTML = '';
+
+      const filtered = logs.filter(it => {
+        const searchFields = (it.employee + ' ' + it.group + ' ' + it.project + ' ' + (it.partner || '')).toLowerCase();
+        return searchFields.includes(q);
+      }).slice().reverse();
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="p-4 text-slate-300">No updates yet</div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'bg-slate-100 text-slate-900 rounded-xl p-4 shadow border-l-4 border-blue-500';
+        const time = new Date(item.timestampISO).toLocaleString();
+        let durationTxt = '';
+        if (item.durationMs !== undefined) {
+          const mins = Math.round(item.durationMs/60000);
+          durationTxt = `<p class="text-sm">⏱ Duration: ${mins} min</p>`;
+        } else if (item.startTimeMs) {
+          const elapsedMin = Math.round((nowMs() - item.startTimeMs)/60000);
+          durationTxt = `<p class="text-sm">⏳ Running: ${elapsedMin} min</p>`;
+        }
+        el.innerHTML = `
+          <p class="font-semibold">${escapeHtml(item.employee)} ${item.partner ? '<span class="text-xs ml-2 muted">['+escapeHtml(item.partner)+']</span>' : ''}</p>
+          <p class="text-sm">Group: ${escapeHtml(item.group)}</p>
+          <p class="text-sm">Project: ${escapeHtml(item.project)}</p>
+          <p class="text-sm">Message: ${escapeHtml(item.message)}</p>
+          <p class="text-sm">Status: ${escapeHtml(item.status)}</p>
+          <p class="text-sm">Priority: ${escapeHtml(item.priority)}</p>
+          ${durationTxt}
+          <p class="text-xs text-slate-500 mt-1">${time}</p>
+        `;
+
+        // Add mark complete button directly under the timestamp if WIP
+        if (item.status === 'WIP') {
+          const btnWrap = document.createElement('div');
+          btnWrap.className = 'mt-3';
+          const btn = document.createElement('button');
+          btn.className = 'w-full py-2 rounded bg-gradient-to-r from-green-500 to-emerald-600 text-white btn-anim';
+          btn.innerText = '✅ Mark Complete';
+          btn.onclick = () => markComplete(item.id);
+          btnWrap.appendChild(btn);
+          el.appendChild(btnWrap);
+        } else if (item.status === 'Complete') {
+          // show completedAt if present
+          if (item.completedAtMs) {
+            const dt = new Date(item.completedAtMs).toLocaleString();
+            const comp = document.createElement('p');
+            comp.className = 'text-xs text-slate-600 mt-2';
+            comp.innerText = `Completed: ${dt}`;
+            el.appendChild(comp);
+          }
+        }
+
+        container.appendChild(el);
+      });
+    }
+
+    // prune logs older than 24 hours (based on id/start timestamp)
+    function pruneOld() {
+      const cutoff = nowMs() - 24*60*60*1000;
+      const before = logs.length;
+      logs = logs.filter(l => {
+        // consider creation time at l.id or timestampISO
+        const createdAt = l.startTimeMs || l.id || new Date(l.timestampISO).getTime();
+        return createdAt >= cutoff;
+      });
+      if (logs.length !== before) saveLogs();
+    }
+
+    // Compute portfolio: for each employee compute free status & average speed
+    function computePortfolio() {
+      pruneOld();
+      const employees = [
+        "Bramhananda Das",
+        "Sanu Singh",
+        "Dipu Mahato",
+        "Debangi Dii",
+        "Antima Di",
+        "Mozzamil Salim",
+        "Nitaii",
+        "Pintu Vhiya",
+      ];
+
+      const grid = document.getElementById('portfolioGrid');
+      grid.innerHTML = '';
+
+      employees.forEach(name => {
+        const empLogs = logs.filter(l => l.employee === name);
+        // active WIP?
+        const activeWIPs = empLogs.filter(l => l.status === 'WIP').length;
+        const isFree = activeWIPs === 0;
+
+        // completed durations
+        const completedDurations = empLogs.filter(l => l.durationMs !== undefined).map(l => l.durationMs);
+        const avgMs = completedDurations.length ? Math.round(completedDurations.reduce((a,b)=>a+b,0)/completedDurations.length) : null;
+
+        // speed label
+        let speedLabel = 'No Data';
+        if (avgMs !== null) {
+          const mins = Math.round(avgMs/60000);
+          if (mins <= 30) speedLabel = `Fast (${mins}m avg)`;
+          else if (mins <= 120) speedLabel = `Medium (${mins}m avg)`;
+          else speedLabel = `Slow (${mins}m avg)`;
+        }
+
+        // build card
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl port-card ${isFree ? 'bg-slate-100/90' : 'bg-slate-200/90'}`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-semibold">${escapeHtml(name)}</p>
+              <p class="text-sm muted mt-1">${isFree ? '✅ Free' : '⏳ Busy ('+activeWIPs+' WIP)'}</p>
+              <p class="text-sm mt-2">Speed: <span class="font-medium">${escapeHtml(speedLabel)}</span></p>
+            </div>
+            <div class="text-right text-xs muted">
+              <p>Completed: ${completedDurations.length}</p>
+              <p class="mt-2">Active: ${activeWIPs}</p>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // Leaderboard: count uploads per employee and sort desc
+    function renderLeaderboard() {
+      pruneOld();
+      const counts = {};
+      logs.forEach(l => {
+        counts[l.employee] = (counts[l.employee] || 0) + 1;
+      });
+      const arr = Object.keys(counts).map(k => ({ name: k, count: counts[k] }));
+      // ensure all employees appear even if zero
+      const allNames = [
+        "Bramhananda Das","Sanu Singh","Dipu Mahato","Debangi Dii","Antima Di","Mozzamil Salim","Nitaii","Pintu Vhiya"
+      ];
+      allNames.forEach(n => { if (!counts[n]) arr.push({name:n,count:0}); });
+
+      // unique by name
+      const uniq = [];
+      const seen = new Set();
+      arr.sort((a,b)=>b.count - a.count);
+      arr.forEach(item => {
+        if (!seen.has(item.name)) {
+          uniq.push(item);
+          seen.add(item.name);
+        }
+      });
+
+      const container = document.getElementById('leaderboardList');
+      container.innerHTML = '';
+      uniq.forEach((item, idx) => {
+        const el = document.createElement('div');
+        el.className = `p-3 rounded ${idx===0 ? 'leader-top' : 'bg-slate-800/40'}`;
+        el.innerHTML = `<div class="flex items-center justify-between">
+          <div><span class="font-semibold">${escapeHtml(item.name)}</span><div class="text-xs muted">Updates: ${item.count}</div></div>
+          <div class="text-sm font-semibold">${idx+1}</div>
+        </div>`;
+        container.appendChild(el);
+      });
+    }
+
+    // Escape HTML helper
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Export CSV for portfolio or logs
+    document.getElementById('exportCsv').addEventListener('click', () => {
+      // export logs as CSV
+      const headers = ['employee','partner','group','project','message','status','priority','timestamp','durationMin'];
+      const rows = logs.map(l => {
+        const mins = l.durationMs ? Math.round(l.durationMs/60000) : '';
+        return [l.employee, l.partner || '', l.group, l.project, l.message.replace(/\n/g,' '), l.status, l.priority, new Date(l.timestampISO).toLocaleString(), mins];
+      });
+      const csv = [headers.join(','), ...rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(','))].join('\n');
+      const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'work_logs.csv'; a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Clear all logs (UI action)
+    function clearAll() {
+      if (!confirm('Clear all stored logs?')) return;
+      logs = [];
+      saveLogs();
+      renderLogs();
+      computePortfolio();
+      renderLeaderboard();
+    }
+
+    // periodic prune and refresh (every minute)
+    setInterval(() => {
+      pruneOld();
+      renderLogs();
+      computePortfolio();
+      renderLeaderboard();
+    }, 60 * 1000);
+
+    // initial render
+    renderLogs();
+    computePortfolio();
+    renderLeaderboard();
+  </script>
+</body>
+</html>
